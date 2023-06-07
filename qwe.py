@@ -1,6 +1,6 @@
 from kivymd.uix.label import MDLabel
 from kivymd.uix.relativelayout import MDRelativeLayout
-from typing import Any
+from kivy.metrics import sp, dp
 from kivymd.app import MDApp
 from kivymd.uix.floatlayout import MDFloatLayout
 from kivy.uix.image import Image
@@ -30,7 +30,6 @@ class second(Thread):
 		while True:
 			try:
 				q = get("http://127.0.0.1:5000").json()
-				#self.qw  = q['102']
 				self.qw = q
 				break
 			except:
@@ -47,11 +46,11 @@ class app(MDApp):
 	def build(self):
 		self.fl = MDFloatLayout()
 		
-		self.layout = MDGridLayout(cols=1, spacing=100, size_hint_y=None, padding=100)
-		self.layout.height = 100
-# Make sure the height is such that there is something to scroll.
+		self.layout = MDGridLayout(cols=1, spacing=dp(130), padding=dp(35))
+		self.layout.height = dp(500)
+		self.layout.size_hint= (1 ,.2)
 		self.layout.bind(minimum_height=self.layout.setter('height'))
-		self.root = MDScrollView(size_hint=(1, None), pos_hint={"center_x":.5,'center_y':.5})
+		self.root = MDScrollView(size_hint=(1, 1), pos_hint={"center_x":.5,'center_y':.4})
 		self.root.size = (Window.width, Window.height)
 		self.root.add_widget(self.layout)
 
@@ -68,26 +67,31 @@ class app(MDApp):
 				print(self.th.qw)
 				self.animRestarter()
 			else:
-				for i in range(10):
-					card = MDCard()
-					rl = MDRelativeLayout()
-					sl = MDStackLayout()
-					sl.padding = 40
+				w = False
+				for i in self.th.qw:
+					card = MDCard(orientation="vertical", spacing=dp(10))
+					sl = MDStackLayout(spacing=dp(5))
+					sl.padding = 0
 					sl.size_hint = (1, None)
-					sl.height = 90
-					#sl.spacing = 60
-					for i, q in self.th.qw.items():
-						sl.add_widget(MDRaisedButton(text=f"{i} комната, для {q} курса"))
-					#rl.add_widget(sl)
+					sl.height = dp(90)
+					w = False
+					for q in i:
+						if w == False:
+							card.add_widget(MDLabel(text=str(q[0]) + " Этаж", halign="center"))
+							w = True
+						else: 
+							sl.add_widget(MDRaisedButton(text=q, font_size=sp(15)))
 					card.add_widget(sl)
-
 					self.layout.add_widget(card)
+
+				
+				            
 		anim = Animation(
 			d=.01
 		)
 		anim.on_complete=low
 		anim.start(self.fl)
-	
+
 
 
 app().run()
