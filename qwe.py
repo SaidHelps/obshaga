@@ -1,97 +1,85 @@
-from kivymd.uix.label import MDLabel
-from kivymd.uix.relativelayout import MDRelativeLayout
-from kivy.metrics import sp, dp
-from kivymd.app import MDApp
-from kivymd.uix.floatlayout import MDFloatLayout
-from kivy.uix.image import Image
-from kivymd.uix.stacklayout import MDStackLayout
-from kivymd.uix.button import MDRaisedButton
-from kivy.core.window import Window
-from threading import Thread
+from kivy.uix.popup import Popup
 from kivymd.uix.card import MDCard
-from kivymd.uix.gridlayout import MDGridLayout
 from kivymd.uix.scrollview import MDScrollView
-from kivy.animation import Animation
-from requests import get
-from time import sleep
+from kivy.core.window import Window
+from kivymd.uix.stacklayout import MDStackLayout
+from kivymd.uix.screen import MDScreen
+from kivymd.uix.screenmanager import MDScreenManager
+from kivymd.uix.floatlayout import MDFloatLayout
+from kivymd.app import MDApp
+from kivymd.uix.gridlayout import MDGridLayout
+from kivymd.uix.button import MDRaisedButton
+from kivy.metrics import dp, sp
+from kivymd.uix.label import MDLabel
+from kivy.uix.image import Image
 
 
 Window.size = (450, 700)
 
 
-class second(Thread):
-	def __init__(self, main):
-		super().__init__()
-		self.main = main
-		self.qw = None
-
-
-	def run(self):
-		while True:
-			try:
-				q = get("http://127.0.0.1:5000").json()
-				self.qw = q
-				break
-			except:
-				sleep(1)
-
-
 class app(MDApp):
-	def __init__(self):
-		super().__init__()
-		self.th = second(main=self)
-		self.th.daemon = True
-		self.th.start()
+	def __init__(self, **kwargs):
+		super().__init__(**kwargs)
+		self.sm = MDScreenManager()
+		self.sc1 = MDScreen(name = "main")
+		self.sc2 = MDScreen(name = "second")
+		self.sm.add_widget(self.sc1)
+		self.sm.add_widget(self.sc2)
+
 
 	def build(self):
-		self.fl = MDFloatLayout()
-		
-		self.layout = MDGridLayout(cols=1, spacing=dp(130), padding=dp(35))
-		self.layout.height = dp(500)
-		self.layout.size_hint= (1 ,.2)
-		self.layout.bind(minimum_height=self.layout.setter('height'))
-		self.root = MDScrollView(size_hint=(1, 1), pos_hint={"center_x":.5,'center_y':.4})
-		self.root.size = (Window.width, Window.height)
-		self.root.add_widget(self.layout)
+			self.fl1 = MDFloatLayout()
 
-		self.fl.add_widget(self.root)
+			self.gl1 = MDGridLayout(rows = 2, cols = 2)
+			self.gl1.size_hint = (.5, .5)
+			self.gl1.pos_hint={'center_x':.5,'center_y':.5}
+			self.gl1.spacing = dp(10)
 
-		self.animRestarter()
+			self.gl1.add_widget(MDRaisedButton(text="Просмотр", size_hint=(.2, .2), md_bg_color="red"))
+			self.gl1.add_widget(MDRaisedButton(text="Редактирование", size_hint=(.2, .2), on_release=lambda x:self.changeWin(win="second"), md_bg_color="red"))
 
-		return self.fl
-	
+			self.fl1.add_widget(self.gl1)
 
-	def animRestarter(self):
-		def low(q):
-			if self.th.qw == None:
-				print(self.th.qw)
-				self.animRestarter()
-			else:
-				w = False
-				for i in self.th.qw:
-					card = MDCard(orientation="vertical", spacing=dp(10))
-					sl = MDStackLayout(spacing=dp(5))
-					sl.padding = 0
-					sl.size_hint = (1, None)
-					sl.height = dp(90)
-					w = False
-					for q in i:
-						if w == False:
-							card.add_widget(MDLabel(text=str(q[0]) + " Этаж", halign="center"))
-							w = True
-						else: 
-							sl.add_widget(MDRaisedButton(text=q, font_size=sp(15)))
-					card.add_widget(sl)
-					self.layout.add_widget(card)
+			self.fl2 = MDFloatLayout()
+			
+			self.layout2 = MDGridLayout(cols=1, spacing=dp(110), size_hint_y=None, padding=dp(25))
+			self.layout2.bind(minimum_height=self.layout2.setter('height'))
 
-				
-				            
-		anim = Animation(
-			d=.01
-		)
-		anim.on_complete=low
-		anim.start(self.fl)
+			for i in range(4):
+				card = MDCard(orientation="vertical", height=Window.height/3,  spacing=dp(15))
+				card.add_widget(MDLabel(text=f"Hello world, {i}", size_hint_x=1, halign="center"))
+				sl = MDStackLayout(spacing=dp(5))
+				sl.size_hint=(1, None)
+				sl.height = 90
+				card.add_widget(sl)
+				for i in range(14):
+					sl.add_widget(MDRaisedButton(text=str(i), font_size=1, md_bg_color="red", size=(5, 5)))
+				self.layout2.add_widget(card)
+				self.layout2.spacing = card.height
+			self.root = MDScrollView(size_hint=(.6, .7), pos_hint={'center_x':.7,'center_y':.5})
+			self.root.add_widget(self.layout2)
 
+			self.fl2.add_widget(MDRaisedButton(text="Добавить Комнату", size_hint=(.3, .1), pos_hint={'center_x':.2, 'center_y':.55}, on_release=lambda x:self.popupActivate(type="room"), md_bg_color="red"))
+			self.fl2.add_widget(MDRaisedButton(text="Добавить Этаж", size_hint=(.3, .1), pos_hint={'center_x':.2, 'center_y':.7}, on_release=lambda x:self.popupActivate(type="layer"), md_bg_color="red"))
+
+			self.fl2.add_widget(self.root)
+
+			self.sc1.add_widget(self.fl1)
+			self.sc2.add_widget(self.fl2)
+
+			return self.sm
+
+
+	def popupActivate(self, type):
+		popupRoom = Popup(title='Создать комнату',
+    size_hint=(None, None), size=(Window.size[0]/2, Window.size[1]/2),
+	 title_color="red", background_color="white", overlay_color="red", separator_color="red",title_align="center", title_size=Window.size[0]/40)
+		popupRoom.open()
+
+
+	def changeWin(self, win):
+		self.sm.current = win	
 
 
 app().run()
+
